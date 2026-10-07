@@ -1,0 +1,40 @@
+name: Publish signed binaries
+on:
+  push:
+    branches: [main]
+    paths: ['bundle/**']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: public-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: Validate bundle and publish
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          id=$(jq -er '.build_id | numbers' bundle/update.json)
+          version=$(jq -er '.version | strings' bundle/update.json)
+          test "$id" -gt 0
+          [[ "$id" =~ ^[0-9]+$ ]]
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          test "$(jq -r .platform bundle/update.json)" = windows-x64
+          test "$(stat -c %s bundle/clipbridge.exe)" = "$(jq -r .size bundle/update.json)"
+          test "$(sha256sum bundle/clipbridge.exe | cut -d' ' -f1)" = "$(jq -r .sha256 bundle/update.json)"
+          test "$(stat -c %s bundle/update.sig)" = 64
+          tag="build-$id"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            test "$(gh release view "$tag" --json isDraft --jq .isDraft)" = true || exit 0
+          else
+            gh release create "$tag" --draft --target "$GITHUB_SHA" --title "ClipBridge $version ($id)" \
+              --notes "Windows x64 portable executable. Download clipbridge.exe. Signed manifest accompanies automatic updates. Source code and account credentials are not published."
+          fi
+          gh release upload "$tag" bundle/clipbridge.exe bundle/update.json bundle/update.sig --clobber
+          gh release edit "$tag" --draft=false --latest
