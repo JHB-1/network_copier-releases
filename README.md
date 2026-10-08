@@ -8,7 +8,9 @@ Windows x64: download **clipbridge.exe**, run it, then sign in to Google in your
 
 Version 0.3.0+ checks this repository for signed updates. Newer builds are downloaded in the background and restart only when transfers and pending clips are finished. Failed startup triggers rollback. Existing pre-updater installations need this EXE installed once manually.
 
-This repository contains release binaries, signed update metadata, and the release publication workflow only. Application source is maintained privately. The signature public key is embedded in the application; a modified executable or manifest is rejected. Release signing is separate from Windows Authenticode.
+This repository contains release binaries, signed update metadata, LGPL relink materials, and the publication workflow. Application source is maintained privately. Official downloaded updates require valid signatures; running a locally relinked EXE does not require a developer signature. Release signing is separate from Windows Authenticode.
+
+Qt Core/Gui/Widgets are statically linked under LGPLv3 on Windows. Ordinary use needs only the EXE. The matching `clipbridge-lgpl-relink.tar.gz` contains application objects/libraries, exact Qt source, licenses, and rebuild instructions for replacing Qt. No user settings, login tokens, or private signing keys are included. Disable automatic updates to retain your locally modified Qt build.
 
 Settings: `%LOCALAPPDATA%\ClipBridge\config.toml`. Set `[updates] enabled = false` to disable automatic checks. Menu **Check for updates** performs an explicit check and installs an available update. Data directory and Google login survive replacement.
 

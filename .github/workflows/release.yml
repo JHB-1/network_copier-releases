@@ -29,12 +29,13 @@ jobs:
           test "$(stat -c %s bundle/clipbridge.exe)" = "$(jq -r .size bundle/update.json)"
           test "$(sha256sum bundle/clipbridge.exe | cut -d' ' -f1)" = "$(jq -r .sha256 bundle/update.json)"
           test "$(stat -c %s bundle/update.sig)" = 64
+          test -s bundle/clipbridge-lgpl-relink.tar.gz
           tag="build-$id"
           if gh release view "$tag" >/dev/null 2>&1; then
             test "$(gh release view "$tag" --json isDraft --jq .isDraft)" = true || exit 0
           else
             gh release create "$tag" --draft --target "$GITHUB_SHA" --title "ClipBridge $version ($id)" \
-              --notes "Windows x64 portable executable. Download clipbridge.exe. Signed manifest accompanies automatic updates. Source code and account credentials are not published."
+              --notes "Windows x64 portable executable. Download clipbridge.exe. Signed manifest accompanies automatic updates. LGPL Qt source and application relink materials are provided separately. Application source and account credentials are not published."
           fi
-          gh release upload "$tag" bundle/clipbridge.exe bundle/update.json bundle/update.sig --clobber
+          gh release upload "$tag" bundle/clipbridge.exe bundle/update.json bundle/update.sig bundle/clipbridge-lgpl-relink.tar.gz --clobber
           gh release edit "$tag" --draft=false --latest
